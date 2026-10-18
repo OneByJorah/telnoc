@@ -1,5 +1,8 @@
 # NetBot Configuration
 # Copy this to config.yaml and fill in your values
+#
+# Demo / no-token mode: leave `bot.token` as the placeholder and the dashboard
+# and agent server will still start; only Telegram bot polling is skipped.
 
 bot:
   token: "YOUR_TELEGRAM_BOT_TOKEN"
@@ -24,7 +27,7 @@ dashboard:
   enabled: true
   host: "0.0.0.0"
   port: 5000
-  title: "NetBot Dashboard"
+  title: "telnoc Dashboard"
 
 discovery:
   enabled: true

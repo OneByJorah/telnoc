@@ -34,7 +34,7 @@ def init_dashboard(agents: dict, snmp_devices: dict, config: dict):
 
 @app.route("/")
 def index():
-    return render_template("index.html", title=_config.get("dashboard", {}).get("title", "NetBot"))
+    return render_template("index.html", title=_config.get("dashboard", {}).get("title", "telnoc Dashboard"))
 
 
 @app.route("/api/agents")
@@ -81,9 +81,9 @@ def start_dashboard(agents, snmp_devices, config):
     t.start()
     host = config.get("dashboard", {}).get("host", "0.0.0.0")
     port = config.get("dashboard", {}).get("port", 5000)
-    socketio.run(app, host=host, port=port, use_reloader=False)
+    socketio.run(app, host=host, port=port, use_reloader=False, allow_unsafe_werkzeug=True)
 
 
 if __name__ == "__main__":
     # Standalone mode for testing
-    socketio.run(app, host="0.0.0.0", port=5000, debug=True)
+    socketio.run(app, host="0.0.0.0", port=5000, debug=True, allow_unsafe_werkzeug=True)
