@@ -4,7 +4,8 @@ FROM python:3.11-slim AS builder
 WORKDIR /build
 COPY requirements.txt .
 # Remove problematic packages for build
-RUN sed -i '/^python-nmap/d; /^nmap==/d; /^pywinrm/d; /^scapy/d' requirements.txt && \
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential && \
+    sed -i '/^python-nmap/d; /^nmap==/d; /^pywinrm/d; /^scapy/d' requirements.txt && \
     pip install --no-cache-dir --user -r requirements.txt
 
 # ── Stage 2: Runtime ───────────────────────────────────────

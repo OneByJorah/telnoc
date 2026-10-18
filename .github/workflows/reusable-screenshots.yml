@@ -66,6 +66,12 @@ jobs:
             if [ -f "$COMPOSE_DIR/.env.example" ]; then cp "$COMPOSE_DIR/.env.example" "$COMPOSE_DIR/.env";
             else : > "$COMPOSE_DIR/.env"; fi
           fi
+          # Force demo mode: seed synthetic data, never touch the Telegram API.
+          if grep -q '^TELNOC_DEMO=' "$COMPOSE_DIR/.env"; then
+            sed -i 's/^TELNOC_DEMO=.*/TELNOC_DEMO=1/' "$COMPOSE_DIR/.env"
+          else
+            printf '\nTELNOC_DEMO=1\n' >> "$COMPOSE_DIR/.env"
+          fi
           docker compose -f "$COMPOSE_FILE_PATH" up -d --build
 
       - name: Wait for health
@@ -107,11 +113,12 @@ jobs:
           git add "$OUT_DIR"
           if git diff --cached --quiet; then echo "No screenshot changes"; exit 0; fi
           git commit -m "docs: update screenshots"
-          git push --force-with-lease origin "$BRANCH"
-          if gh pr view "$BRANCH" >/dev/null 2>&1; then
+          git push --force origin "$BRANCH"  # bot branch is regenerated wholesale each run
+          if gh pr view "$BRANCH" --state OPEN >/dev/null 2>&1; then
             echo "PR already open for $BRANCH"
           else
             gh pr create --base "$DEFAULT_BRANCH" --head "$BRANCH" \
               --title "docs: update screenshots" \
-              --body "Automated screenshots captured from the demo stack. Review each image for real data before merging."
+              --body "Automated screenshots captured from the demo stack. Review each image for real data before merging." \
+              || echo "PR create skipped (already exists from a concurrent run) - success outcome"
           fi

@@ -93,7 +93,7 @@ with open("/app/config/config.yaml.example") as f:
     cfg = yaml.safe_load(f) or {}
 
 token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
-if token and token not in {"YOUR_TELEGRAM_BOT_TOKEN", "change_me_your_telegram_bot_token"}:
+if token and token not in {"YOUR_TELEGRAM_BOT_TOKEN", "change_me_your_telegram_bot_token", "<set-value>"}:
     cfg.setdefault("bot", {})["token"] = token
 
 admins = os.environ.get("ADMIN_CHAT_IDS", "")

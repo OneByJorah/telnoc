@@ -21,6 +21,11 @@ concurrency:
 jobs:
   screenshots:
     uses: ./.github/workflows/reusable-screenshots.yml
+    # telnoc's screenshots target the web dashboard (port 5000); the
+    # agent server's /health endpoint (port 8080) is the health probe.
+    with:
+      base-url: http://127.0.0.1:5000
+      health-url: http://127.0.0.1:8080/health
     # To use your self-hosted runner (trusted events only):
     # with:
     #   runner: self-hosted
