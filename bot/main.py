@@ -57,6 +57,7 @@ PLACEHOLDER_TOKENS = {
     "",
     "YOUR_TELEGRAM_BOT_TOKEN",
     "change_me_your_telegram_bot_token",
+    "<set-value>",
     "demo",
 }
 
