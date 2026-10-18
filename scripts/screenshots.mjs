@@ -1,5 +1,5 @@
 // Captures real screenshots of the running demo stack with Playwright.
-// Usage (stack already running):  BASE_URL=http://127.0.0.1:8080 node scripts/screenshots.mjs
+// Usage (stack already running):  BASE_URL=http://127.0.0.1:5000 node scripts/screenshots.mjs
 // Requires: npm install --no-save playwright && npx playwright install chromium
 //
 // Safety: every page is scanned for private IPs, tailnet IPs, emails, and forbidden words
@@ -11,13 +11,19 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 
-const BASE = process.env.BASE_URL || "http://127.0.0.1:8080";
+const BASE = process.env.BASE_URL || "http://127.0.0.1:5000";
 const OUT = process.env.OUT_DIR || "docs/screenshots";
 const RECORD = process.env.RECORD === "1";
 
+// Viewports to capture. Name becomes part of the filename.
+const VIEWPORTS = [
+  { name: "desktop", width: 1440, height: 900 },
+  { name: "mobile",  width: 390,  height: 844 },
+];
+
 // Edit this list per project: one entry per screen worth showing.
 const PAGES = [
-  { name: "dashboard", path: "/", waitFor: "#app-ready" },
+  { name: "dashboard", path: "/", waitFor: ".summary-bar" },
 ];
 
 const FORBIDDEN = [
@@ -42,35 +48,41 @@ const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_PATH || undefined,
   args: process.env.NO_SANDBOX === "1" ? ["--no-sandbox"] : [],
 });
-const context = await browser.newContext({
-  viewport: { width: 1440, height: 900 },
-  deviceScaleFactor: 2,
-  colorScheme: "dark",
-  ...(RECORD ? { recordVideo: { dir: videoDir, size: { width: 1280, height: 720 } } } : {}),
-});
 
 let failed = false;
-for (const p of PAGES) {
-  const page = await context.newPage();
-  await page.goto(new URL(p.path, BASE).toString(), { waitUntil: "networkidle" });
-  if (p.waitFor) await page.waitForSelector(p.waitFor, { timeout: 15000 });
+for (const viewport of VIEWPORTS) {
+  const context = await browser.newContext({
+    viewport: { width: viewport.width, height: viewport.height },
+    deviceScaleFactor: 2,
+    colorScheme: "dark",
+    ...(RECORD ? { recordVideo: { dir: videoDir, size: { width: 1280, height: 720 } } } : {}),
+  });
 
-  const text = (await page.evaluate(() => document.body.innerText)) + "\n" + (await page.title());
-  const hits = FORBIDDEN.filter((f) => f.re.test(text)).map((f) => f.label);
-  if (hits.length) {
-    console.error(`SCRUB FAIL on ${p.name}: found ${hits.join(", ")}. No screenshot written.`);
-    failed = true;
+  for (const p of PAGES) {
+    const page = await context.newPage();
+    await page.goto(new URL(p.path, BASE).toString(), { waitUntil: "networkidle" });
+    if (p.waitFor) await page.waitForSelector(p.waitFor, { timeout: 15000 });
+    // Allow the live clock and any REST fallback updates to settle.
+    await page.waitForTimeout(1500);
+
+    const text = (await page.evaluate(() => document.body.innerText)) + "\n" + (await page.title());
+    const hits = FORBIDDEN.filter((f) => f.re.test(text)).map((f) => f.label);
+    if (hits.length) {
+      console.error(`SCRUB FAIL on ${p.name}/${viewport.name}: found ${hits.join(", ")}. No screenshot written.`);
+      failed = true;
+      await page.close();
+      continue;
+    }
+
+    const file = path.join(OUT, `${p.name}-${viewport.name}.png`);
+    await page.screenshot({ path: file, fullPage: true });
+    console.log(`saved ${file}`);
     await page.close();
-    continue;
   }
 
-  const file = path.join(OUT, `${p.name}.png`);
-  await page.screenshot({ path: file, fullPage: true });
-  console.log(`saved ${file}`);
-  await page.close();
+  await context.close();
 }
 
-await context.close();
 await browser.close();
 
 if (RECORD && !failed) {

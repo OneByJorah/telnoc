@@ -1,12 +1,12 @@
-version: "3.9"
-
 services:
 
-  # ── Telegram Bot + Agent Server ───────────────────────────────────────────
+  # ── Telegram Bot + Agent Server + Dashboard ───────────────────────────────
   bot:
     build: .
+    image: ghcr.io/onebyjorah/telnoc:latest
     container_name: netbot
     restart: unless-stopped
+    env_file: .env
     ports:
       - "127.0.0.1:8080:8080"   # Agent registration + download server
       - "127.0.0.1:5000:5000"   # Web dashboard

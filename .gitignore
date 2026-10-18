@@ -23,3 +23,8 @@ build/
 
 # OneByJorah portfolio tooling
 .venv-screenshot/
+
+# Runtime config (seeded from .example)
+config/config.yaml
+.env
+

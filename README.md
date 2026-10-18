@@ -1,53 +1,56 @@
 <div align="center">
 
-![TeleOps banner](docs/assets/banner.svg)
+![telnoc banner](docs/assets/banner.svg)
 
-# TeleOps
+# telnoc
+
+*Formerly TeleOps.*
 
 **A unified NOC platform for Telegram — monitor agents, discover SNMP devices, run a live dashboard, and manage Linux and Windows hosts from chat commands.**
 
-<a href="https://github.com/OneByJorah/TeleOps/stargazers"><img src="https://img.shields.io/github/stars/OneByJorah/TeleOps?style=flat-square" alt="Stars"></a>
-<a href="https://github.com/OneByJorah/TeleOps/commits"><img src="https://img.shields.io/github/last-commit/OneByJorah/TeleOps?style=flat-square" alt="Last commit"></a>
-<img src="https://img.shields.io/github/license/OneByJorah/TeleOps?style=flat-square" alt="License">
-<img src="https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.10+">
+<a href="https://github.com/OneByJorah/telnoc/stargazers"><img src="https://img.shields.io/github/stars/OneByJorah/telnoc?style=flat-square" alt="Stars"></a>
+<a href="https://github.com/OneByJorah/telnoc/commits"><img src="https://img.shields.io/github/last-commit/OneByJorah/telnoc?style=flat-square" alt="Last commit"></a>
+<img src="https://img.shields.io/github/license/OneByJorah/telnoc?style=flat-square" alt="License">
+<img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+">
 <img src="https://img.shields.io/badge/Flask-SocketIO-000000?style=flat-square&logo=flask&logoColor=white" alt="Flask-SocketIO">
 <img src="https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker Compose">
 
 </div>
 
-![TeleOps dashboard](docs/assets/screenshot.png)
+![telnoc dashboard](docs/screenshots/dashboard-desktop.png)
 
 ## What This Is
 
-TeleOps turns Telegram into a network operations console. A bot fronts a set of cross-platform agents, an SNMP discovery engine, and a live web dashboard, so you can check host health, run signed commands, and get threshold alerts without opening a terminal or a monitoring portal.
+telnoc turns Telegram into a network operations console. A bot fronts a set of cross-platform agents, an SNMP discovery engine, and a live web dashboard, so you can check host health, run signed commands, and get threshold alerts without opening a terminal or a monitoring portal.
 
 It is built for small NOC and homelab operators who want lightweight, self-hosted infrastructure monitoring that reaches them where they already are — chat.
 
 ## Quick Start
 
 ```bash
-git clone https://github.com/OneByJorah/TeleOps.git
-cd TeleOps
+git clone https://github.com/OneByJorah/telnoc.git
+cd telnoc
 
-cp .env.example .env        # set TELEGRAM_BOT_TOKEN and ADMIN_CHAT_IDS
-docker compose up -d
+cp .env.example .env        # set TELEGRAM_BOT_TOKEN + ADMIN_CHAT_IDS to enable the bot
+docker compose up -d --build
 ```
 
 Open **http://localhost:5000** for the dashboard. The agent server listens on **http://localhost:8080**.
 
-> [!WARNING]
-> The `bot` service needs a valid Telegram token to stay up. Check `docker logs netbot` after editing `.env`. On first run the entrypoint seeds `config/config.yaml` from `.env`.
+> [!TIP]
+> telnoc serves the dashboard and agent server even without a real Telegram token. In that mode it seeds synthetic demo data so you can explore the UI immediately. Set `TELEGRAM_BOT_TOKEN` and `ADMIN_CHAT_IDS` to enable the Telegram control plane.
 
 ## Features
 
 - **Telegram control plane** — admin-gated commands for status, agents, SNMP, and per-host actions.
 - **Cross-platform agents** — a stdlib Linux agent and a PowerShell 5.1 Windows agent with HMAC-SHA256 signed command dispatch.
 - **SNMP discovery** — automated device discovery and polling over SNMP v1/v2c/v3.
-- **Live dashboard** — Flask + SocketIO API with REST polling fallback.
+- **Live dashboard** — Flask + SocketIO UI with REST polling fallback, served on port 5000.
 - **Alert management** — CPU/memory/disk thresholds, cooldown, and agent offline detection.
-- **Agent server** — self-registration, heartbeat, and installer downloads over HTTP.
+- **Agent server** — self-registration, heartbeat, and installer downloads on port 8080.
 - **Windows host management** — AD, DNS, and DHCP actions from the Windows agent.
 - **Redis-backed state** — durable job/state storage with append-only persistence.
+- **Dashboard-only / demo mode** — run locally without a Telegram token for screenshots and smoke tests.
 
 ## Architecture
 
@@ -64,7 +67,7 @@ Agents register themselves (`POST /agent/register`) or are discovered by subnet 
 
 ## Configuration
 
-Primary configuration lives in **`config/config.yaml`** (copy from `config/config.yaml.example`): discovery networks, SNMP communities, alert thresholds, and heartbeat intervals all live there. Environment variables are read by `bot/main.py` and seeded into YAML by the entrypoint.
+Primary configuration lives in **`config/config.yaml`** (seeded from `config/config.yaml.example` on first run). Environment variables override the YAML values.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -77,6 +80,7 @@ Primary configuration lives in **`config/config.yaml`** (copy from `config/confi
 | `AGENT_PORT` | `8080` | Agent server port |
 | `SNMP_COMMUNITY` | `public` | Default SNMP community |
 | `SCAN_INTERVAL_MINUTES` | `60` | Network discovery interval |
+| `TELNOC_DEMO` | `0` | Set `1` to seed synthetic agents/SNMP devices |
 
 ## Telegram Commands
 
@@ -95,16 +99,24 @@ Primary configuration lives in **`config/config.yaml`** (copy from `config/confi
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/` | GET | Dashboard UI |
+| `/` | GET | Dashboard UI (port 5000) |
 | `/api/agents` | GET | Registered agents |
 | `/api/snmp` | GET | Discovered SNMP devices |
 | `/api/summary` | GET | Aggregated status summary |
-| `/agent/register` | POST | Agent self-registration |
+| `/agent/register` | POST | Agent self-registration (port 8080) |
 | `/agent/download/linux` | GET | Linux agent installer script |
 | `/agent/download/windows` | GET | Windows agent installer script |
 | `/install/linux` | GET | Linux install helper |
 | `/install/windows` | GET | Windows install helper |
 | `/health` | GET | Agent server health |
+
+## Screenshots
+
+| Desktop | Mobile |
+|---|---|
+| ![Dashboard desktop](docs/screenshots/dashboard-desktop.png) | ![Dashboard mobile](docs/screenshots/dashboard-mobile.png) |
+
+More captures live in [`docs/screenshots/`](docs/screenshots/).
 
 ## Use Cases
 
@@ -114,15 +126,7 @@ Primary configuration lives in **`config/config.yaml`** (copy from `config/confi
 
 ## Tech Stack
 
-Python 3.10+, python-telegram-bot, aiohttp, Flask + Flask-SocketIO, pysnmp, Redis, SQLAlchemy, PowerShell (Windows agent), Docker Compose.
-
-## Screenshots
-
-| Dashboard | Overview |
-|---|---|
-| ![Dashboard](docs/screenshots/dashboard-full.png) | ![Overview](docs/screenshots/dashboard-overview.png) |
-
-More captures live in [`docs/screenshots/`](docs/screenshots/).
+Python 3.11, python-telegram-bot, aiohttp, Flask + Flask-SocketIO, pysnmp, Redis, SQLAlchemy, PowerShell (Windows agent), Docker Compose.
 
 ## Security
 
@@ -130,7 +134,7 @@ Agent `/command` endpoints require HMAC-SHA256 signatures over `timestamp:body` 
 
 ## Contributing
 
-Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). [Open an issue](https://github.com/OneByJorah/TeleOps/issues) to report a bug or request a feature.
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). [Open an issue](https://github.com/OneByJorah/telnoc/issues) to report a bug or request a feature.
 
 ## License
 
