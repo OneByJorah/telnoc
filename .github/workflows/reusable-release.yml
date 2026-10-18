@@ -60,9 +60,17 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .release-please-manifest.json
-          git commit -m "chore: reconcile release manifest to ${head_ver} [skip ci]"
-          git push origin HEAD:main
-          echo "manifest reconciled to $head_ver"
+          # When the manifest already matches the changelog head (common after a
+          # release-PR merge), jq's rewrite produces no diff and `git commit`
+          # would fail with "nothing to commit" under set -e. Only commit/push
+          # when there is actually a staged change.
+          if git diff --cached --quiet; then
+            echo "manifest already at ${head_ver}; nothing to commit"
+          else
+            git commit -m "chore: reconcile release manifest to ${head_ver} [skip ci]"
+            git push origin HEAD:main
+            echo "manifest reconciled to $head_ver"
+          fi
 
       - name: Remove stale pending label from the merged release PR
         env:
