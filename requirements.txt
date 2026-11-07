@@ -31,4 +31,4 @@ netmiko==4.7.0
 rich==13.9.4
 click==8.5.0
 jinja2==3.1.6
-eventlet==0.35.1
+eventlet==0.41.3
